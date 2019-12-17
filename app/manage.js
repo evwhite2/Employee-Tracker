@@ -4,6 +4,36 @@ var table = require("console.table");
 // searchEngine= require("./searchEngine");
 connection = require("../config/connection");
 
+
+//arrays for efficiency:
+var roleArray = [];
+var deptArray = [];
+var employeeArray = [];
+
+connection.query("SELECT title from roles", function (err, res){
+    if (err) throw err;
+    res.forEach(role =>{
+        roleArray.push(role.title);
+    })
+});
+connection.query("Select * from departments", function(err, res){
+    if (err) throw err;
+    res.forEach(dept =>{
+        deptArray.push(dept.dept_name)
+    })
+});
+connection.query("Select employee_id, first_name, last_name FROM employees", function(err, res){
+    if (err) throw err;
+    res.forEach(employee =>{
+        var fullName = employee.first_name+" "+employee.last_name;
+        var simpleList = {
+            id : employee.employee_id,
+            full: fullName,
+        }
+        employeeArray.push(simpleList)
+    })
+});
+
 //loop user back to main menu every time a action is completed
 function loop(){
     inquirer.prompt([
@@ -21,14 +51,70 @@ function loop(){
         });
 };
 
+
+
+var start = function (){
+    //prompt user what action they would like to do first:
+    inquirer.prompt([
+        {
+            name: "action",
+            message: "What would you like to do?",
+            type: "list", 
+            choices: ["View all employees", "Search employees", "Manage employees"]
+        }
+    ]).then(choice=>{
+
+        switch (choice.action){
+            case "View all employees":
+                viewAll();
+            break;
+            case "Search employees":
+                searchEmployees();
+            break;
+            case "Manage employees":
+                manageEmployess();
+            default: "Please make a selection"
+            return;
+
+        }
+    })
+};
+
 //log list of employees
 function viewAll(){
-    var query ="SELECT e.employee_id, e.first_name, e.last_name, r.title, r.salary, e.manager_id FROM employees e, roles r LEFT JOIN employees ON title WHERE e.role_id= r.role_id;"
+    var query ="SELECT e.employee_id, e.first_name, e.last_name, r.title, r.salary, e.manager_id FROM employees e, roles r LEFT JOIN employees ON title WHERE e.role_id= r.role_id ORDER BY e.employee_id;"
     connection.query(query, (err, data)=>{
         if(err) throw err;
             console.table(data);
             loop();
     });
+};
+
+
+//produce switch statement to determine search function
+function searchEmployees(){
+    inquirer.prompt([
+        {
+            name: "searchType",
+            message: "How would you like to search the directory?",
+            type: "list", 
+            choices: ["Name", "Role", "Department", "ID Number"]
+        }
+    ]).then(choice=>{
+        switch (choice.searchType){
+            case "Name":
+                byNameSearch();
+            break;
+            case "Role":
+                byRoleSearch();
+            break;
+            case "Department":
+                byDeptSearch();
+            break;
+            case "ID Number":
+                byIDSearch();
+        };
+    })
 };
     
 
@@ -77,12 +163,7 @@ var byNameSearch = function(){
 }
 
 function byRoleSearch(){
-    connection.query("SELECT title from roles", function (err, res){
-        if (err) throw err; 
-        var roleArray = [];
-        res.forEach(role =>{
-            roleArray.push(role.title);
-        })
+    
         inquirer.prompt([
             {
                 name:"role",
@@ -91,79 +172,103 @@ function byRoleSearch(){
                 choices: roleArray
             }
         ]).then(choice =>{
-            var query =`SELECT d.employee_id, d.first_name, d.last_name, d.title FROM (SELECT e.employee_id, e.first_name, e.last_name, r.title, r.salary, e.manager_id FROM employees e, roles r LEFT JOIN employees ON title WHERE e.role_id= r.role_id) d WHERE d.title="${choice}";`
+            var query =`SELECT d.employee_id, d.first_name, d.last_name, d.title, d.salary FROM (SELECT e.employee_id, e.first_name, e.last_name, r.title, r.salary, e.manager_id FROM employees e, roles r LEFT JOIN employees ON title WHERE e.role_id= r.role_id) d WHERE d.title="${choice.role}";`
             connection.query(query, (err, data)=>{
                 if(err) throw err;
-                    console.log(data); //returns empty array, not sure why since this query works in mysql itself;
+                    console.table(data); 
                     loop();
             });
+        })
+}
+
+function byDeptSearch(){
+    
+        inquirer.prompt([
+            {
+                name:"deptName",
+                message: "Please select department of employee",
+                type: "list",
+                choices: deptArray
+            }
+        ]).then(choice=>{
+            // var query=""
+            console.log(choice)
+        })
+}
+
+
+function manageEmployess(){
+    inquirer.prompt([
+        {
+            name: "action",
+            message: "Please select managment action:",
+            type: "list",
+            choices: ["Add new employee", "Delete employee", "Edit employee information"]
+        }
+    ]).then(choice=>{
+        switch (choice.action){
+            case "Add new employee":
+                addEmployee();
+            break;
+            case "Delete employee":
+                deleteEmployee();
+            break;
+            case "Edit employee information":
+                editEmployee();
+        }
+    })
+};
+
+function addEmployee(){
+    inquirer.prompt([
+        {
+            name: "first",
+            message: "Please input FIRST name of new employee:",
+            type: "input"
+        },
+        {
+            name: "last",
+            message: "Please input LAST name of new employee:",
+            type: "input"
+        },
+        {
+            name: "role",
+            message: "Please input role ID number of the new employee:",
+            type: "input"
+        }, 
+        {
+            name: "manager",
+            message: "Please input the ID number of the new employee's manager:",
+            type: "input"
+        }        
+    ]).then(answers=>{
+        var query =
+            `INSERT INTO employees(first_name, last_name, role_id, manager_id) VALUES ("${answers.first}", "${answers.last}", ${answers.role},${answers.manager});`
+        connection.query(query, function(err, res){
+            if(err) throw err
+            console.log(`New employee ${answers.first} ${answers.last} added.`);
+            loop();
+            
         })
     })
 }
 
-
-//produce switch statement to determine search function
-function searchEmployees(){
+function deleteEmployee(){
     inquirer.prompt([
         {
-            name: "searchType",
-            message: "How would you like to search the directory?",
-            type: "list", 
-            choices: ["Name", "Role", "Department", "ID Number"]
+            name: "del",
+            message: "Please input the employee ID of the employee you wish to delete",
+            type: "input"
         }
-    ]).then(choice=>{
-        switch (choice.searchType){
-            case "Name":
-                byNameSearch();
-            break;
-            case "Role":
-                byRoleSearch();
-            break;
-            case "Department":
-                byDeptSearch();
-            break;
-            case "ID Number":
-                byIDSearch();
-        };
+    ]).then(employee=>{
+        var query =`DELETE FROM employees WHERE employee_id= ${employee.del}`;
+        connection.query(query, function(err, res){
+            if(err) throw err;
+            console.log(`Employee with ID of ${employee.del} has been deleted.`);
+            loop();
+        })
     })
-};
-
-function manageEmployess(){
-console.log("managing")
-};
-
-
-var start = function (){
-    //prompt user what action they would like to do first:
-    inquirer.prompt([
-        {
-            name: "action",
-            message: "What would you like to do?",
-            type: "list", 
-            choices: ["View all employees", "Search employees", "Manage employees"]
-        }
-    ]).then(choice=>{
-
-        switch (choice.action){
-            case "View all employees":
-                viewAll();
-            break;
-            case "Search employees":
-                searchEmployees();
-            break;
-            case "Manage employees":
-                manageEmployess();
-            default: "Please make a selection"
-            return;
-
-        }
-    })
-};
-
-
-
-
-
+}
 
 
 module.exports=start;
