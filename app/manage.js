@@ -54,8 +54,6 @@ function loop(){
         });
 };
 
-
-
 var start = function (){
     //prompt user what action they would like to do first:
     inquirer.prompt([
@@ -201,9 +199,30 @@ function byDeptSearch(){
                 choices: deptArray
             }
         ]).then(choice=>{
-            // var query=""
-            console.log(choice)
+            var query =`SELECT * FROM (SELECT e.employee_id, e.first_name, e.last_name, r.title, d.dept_name, r.salary, concat(e2.first_name, " ", e2.last_name) AS manager FROM employees e LEFT OUTER JOIN employees e2 ON e.manager_id = e2.employee_id INNER JOIN roles r ON (r.role_id = e.role_id) INNER JOIN departments d ON (d.dept_id = r.dept_id)) derived WHERE derived.dept_name="${choice.deptName}";`
+            connection.query(query, (err, data)=>{
+                if(err) throw err;
+                    console.table(data); 
+                    loop();
+            });
         })
+}
+
+function byIDSearch(){
+    inquirer.prompt([
+        {
+            name:"eId",
+            message: "Please input ID number of the employee",
+            type: "input"
+        }
+    ]).then(input=>{
+        var query =`SELECT * FROM (SELECT e.employee_id, e.first_name, e.last_name, r.title, d.dept_name, r.salary, concat(e2.first_name, " ", e2.last_name) AS manager FROM employees e LEFT OUTER JOIN employees e2 ON e.manager_id = e2.employee_id INNER JOIN roles r ON (r.role_id = e.role_id) INNER JOIN departments d ON (d.dept_id = r.dept_id)) derived WHERE derived.employee_id="${input.eId}";`
+        connection.query(query, (err, data)=>{
+            if(err) throw err;
+                console.table(data); 
+                loop();
+        });
+    })
 }
 
 //all management routes
