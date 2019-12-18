@@ -22,6 +22,8 @@ connection.query("Select * from departments", function(err, res){
         deptArray.push(dept.dept_name)
     })
 });
+
+//starter code which will define a list of employees to populate and allow user to scroll through all names to manage database in a more interactive way:
 connection.query("Select employee_id, first_name, last_name FROM employees", function(err, res){
     if (err) throw err;
     res.forEach(employee =>{
@@ -204,7 +206,7 @@ function byDeptSearch(){
         })
 }
 
-
+//all management routes
 function manageEmployess(){
     inquirer.prompt([
         {
@@ -362,7 +364,7 @@ function editEmployee(){
     
     });
 }
-
+//views for convenient reference
 function viewroles(){
     connection.query("SELECT * FROM roles", (err, data)=>{
         if(err) throw err;
