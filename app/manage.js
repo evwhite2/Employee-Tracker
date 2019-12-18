@@ -74,6 +74,7 @@ var start = function (){
             break;
             case "Manage employees":
                 manageEmployess();
+            break;
             case "View role types":
                 viewroles();
             break;
@@ -280,14 +281,86 @@ function deleteEmployee(){
 function editEmployee(){
     inquirer.prompt([
         {
-            name: "edit",
-            message: "Please select an employee to edit",
-            type: "list",
-            choices: employeeArray
+            name: "eId",
+            message: "Please input the id number of the employee you would like to edit",
+            type: "input"
+        }, 
+        {
+            name:"action", 
+            message: "What information would you like to edit?",
+            type: "list", 
+            choices: ["first name", "last name", "role", "manager"]
         }
-    ]).then(choice=>{
-        console.log(choice);
-    })
+    ]).then(choices=>{
+        connection.query(`SELECT * FROM employees WHERE employee_id=${choices.eId};`, (err, data)=>{
+            if(err) throw err;
+            console.log(`...editing ${data[0].first_name} ${data[0].last_name}, EID: ${data[0].employee_id}`);
+                switch (choices.action){
+                case "first name":
+                    inquirer.prompt([
+                        {
+                            name:"action", 
+                            message: "Input first name of employee",
+                            type: "input"
+                        }
+                    ]).then(input =>{
+                        connection.query(`UPDATE employees SET first_name="${input.action}" WHERE employee_id=${data[0].employee_id}`, (err, update)=>{
+                            if(err) throw err;
+                            console.log(`Employee ${data[0].employee_id} updated`);
+                            loop();
+                        });
+                    });
+                break;
+                case "last name":
+                    inquirer.prompt([
+                        {
+                            name:"action", 
+                            message: "Input last name of employee",
+                            type: "input"
+                        }
+                    ]).then(input =>{
+                        connection.query(`UPDATE employees SET last_name="${input.action}" WHERE employee_id=${data[0].employee_id}`, (err, update)=>{
+                            if(err) throw err;
+                            console.log(`Employee ${data[0].employee_id} updated`);
+                            loop();
+                        });
+                    });
+                break;
+                case "role":
+                    inquirer.prompt([
+                        {
+                            name:"action", 
+                            message: "Input new role ID for this employee",
+                            type: "input"
+                        }
+                    ]).then(input =>{
+                        connection.query(`UPDATE employees SET role_id="${input.action}" WHERE employee_id=${data[0].employee_id}`, (err, update)=>{
+                            if(err) throw err;
+                            console.log(`Employee ${data[0].employee_id} updated`);
+                            loop();
+                        });
+                    });
+                break;
+                case "manager":
+                    inquirer.prompt([
+                        {
+                            name:"action", 
+                            message: "Input employee ID of new manager for this employee",
+                            type: "input"
+                        }
+                    ]).then(input =>{
+                        connection.query(`UPDATE employees SET manager_id="${input.action}" WHERE employee_id=${data[0].employee_id}`, (err, update)=>{
+                            if(err) throw err;
+                            console.log(`Employee ${data[0].employee_id} updated`);
+                            loop();
+                        });
+                    });
+                default: "Please make a selection"
+                return;
+            };
+        })
+    
+    });
 }
 
 function viewroles(){
