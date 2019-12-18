@@ -61,7 +61,7 @@ var start = function (){
             name: "action",
             message: "What would you like to do?",
             type: "list", 
-            choices: ["View all employees", "Search employees", "Manage employees"]
+            choices: ["View all employees", "Search employees", "Manage employees", "View role types", "View all departments"]
         }
     ]).then(choice=>{
 
@@ -74,6 +74,11 @@ var start = function (){
             break;
             case "Manage employees":
                 manageEmployess();
+            case "View role types":
+                viewroles();
+            break;
+            case "View all departments":
+                viewdept();
             default: "Please make a selection"
             return;
 
@@ -282,6 +287,22 @@ function editEmployee(){
         }
     ]).then(choice=>{
         console.log(choice);
+    })
+}
+
+function viewroles(){
+    connection.query("SELECT * FROM roles", (err, data)=>{
+        if(err) throw err;
+        console.table(data);
+        loop();
+    })
+}
+
+function viewdept(){
+    connection.query("SELECT * FROM departments", (err, data)=>{
+        if(err) throw err;
+        console.table(data);
+        loop();
     })
 }
 
