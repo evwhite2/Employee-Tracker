@@ -30,9 +30,10 @@ connection.query("Select employee_id, first_name, last_name FROM employees", fun
             id : employee.employee_id,
             full: fullName,
         }
-        employeeArray.push(simpleList)
-    })
+        employeeArray.push(simpleList);
+    });
 });
+
 
 //loop user back to main menu every time a action is completed
 function loop(){
@@ -82,13 +83,14 @@ var start = function (){
 
 //log list of employees
 function viewAll(){
-    var query ="SELECT e.employee_id, e.first_name, e.last_name, r.title, r.salary, e.manager_id FROM employees e, roles r LEFT JOIN employees ON title WHERE e.role_id= r.role_id ORDER BY e.employee_id;"
+    var query = "SELECT e.employee_id, e.first_name, e.last_name, r.title, d.dept_name, r.salary, concat(e2.first_name, ' ', e2.last_name) AS manager FROM employees e LEFT OUTER JOIN employees e2 ON e.manager_id = e2.employee_id INNER JOIN roles r ON (r.role_id = e.role_id) INNER JOIN departments d ON (d.dept_id = r.dept_id);"
+
     connection.query(query, (err, data)=>{
         if(err) throw err;
             console.table(data);
             loop();
     });
-};
+}
 
 
 //produce switch statement to determine search function
@@ -270,5 +272,17 @@ function deleteEmployee(){
     })
 }
 
+function editEmployee(){
+    inquirer.prompt([
+        {
+            name: "edit",
+            message: "Please select an employee to edit",
+            type: "list",
+            choices: employeeArray
+        }
+    ]).then(choice=>{
+        console.log(choice);
+    })
+}
 
 module.exports=start;
